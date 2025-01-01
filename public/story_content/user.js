@@ -120,7 +120,7 @@ let score = player.GetVar("score");
 let name = player.GetVar("name");
 	
 // Emit 'getScore' event to the server
-socket.emit('getScore', { name: name, score: score });
+socket.emit('getScore', { sessionId: sessionId, name: name, score: score });
 
 // Listen for 'getScore' event response from the server
 socket.on("getScore", (data) => {
