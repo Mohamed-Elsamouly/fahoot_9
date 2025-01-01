@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+const { v4: uuidv4 } = require('uuid'); // For generating unique session IDs
 
 // Serve static files from the 'public' directory
 app.use(express.static('public'));
@@ -14,32 +15,58 @@ const socketio = require('socket.io');
 const io = socketio(expressServer);
 
 let sessions = []; // Stores all active game sessions
+let sessionLock = false; // Lock to handle concurrent player joins
 
 // Socket.IO logic
 io.on('connection', (socket) => {
     // Listen for "find" event (player name submission)
     socket.on("find", (e) => {
-        let session = sessions.find(s => s.players.length < 4);
+        // Wait until the lock is released
+        const waitForLock = async () => {
+            while (sessionLock) {
+                await new Promise(resolve => setTimeout(resolve, 10)); // Wait 10ms
+            }
+            sessionLock = true; // Acquire the lock
+        };
 
-        // If no session with available slots exists, create a new one
-        if (!session) {
-            session = { players: [], playersScore: [], disconnectedPlayersCount: 0 };
-            sessions.push(session);
-        }
+        waitForLock().then(() => {
+            // Check if the player is already in a session
+            const existingSession = sessions.find(session => session.players.some(player => player.socketId === socket.id));
 
-        // Add the player to the session
-        session.players.push({ name: e.name, socketId: socket.id });
+            if (existingSession) {
+                console.log(`Player ${e.name} is already in a session.`);
+                sessionLock = false; // Release the lock
+                return;
+            }
 
-        // If the session has 4 players, start the game
-        if (session.players.length === 4) {
-            io.emit("find", { connected: true, sessionId: sessions.indexOf(session) });
-            console.log("Players connected in session:", session.players.map(player => player.name));
-        }
+            // Find a session with less than 4 players
+            let session = sessions.find(s => s.players.length < 4);
+
+            // If no session with available slots exists, create a new one
+            if (!session) {
+                session = { id: uuidv4(), players: [], playersScore: [], disconnectedPlayersCount: 0 };
+                sessions.push(session);
+                console.log(`New session created: ${session.id}`);
+            }
+
+            // Add the player to the session
+            session.players.push({ name: e.name, socketId: socket.id });
+            console.log(`Player ${e.name} added to session ${session.id}. Total players: ${session.players.length}`);
+
+            // If the session has exactly 4 players, start the game
+            if (session.players.length === 4) {
+                io.emit("find", { connected: true, sessionId: session.id });
+                console.log("Game started for session:", session.id);
+                console.log("Players in session:", session.players.map(player => player.name));
+            }
+
+            sessionLock = false; // Release the lock
+        });
     });
 
     // Listen for "getScore" event (player score submission)
     socket.on("getScore", (e) => {
-        const session = sessions[e.sessionId];
+        const session = sessions.find(s => s.id === e.sessionId);
 
         if (session) {
             session.playersScore.push(e);
@@ -73,6 +100,17 @@ io.on('connection', (socket) => {
                     session.playersScore.push({ name: disconnectedPlayer.name, score: 0 });
                     session.disconnectedPlayersCount++;
                     console.log(`Player disconnected after 4 players were connected. Score set to zero.`);
+
+                    // Check if all 4 players in the session have submitted their scores (either explicitly or by disconnecting)
+                    if (session.playersScore.length === 4) {
+                        io.emit("getScore", {
+                            sessionId: session.id,
+                            scores: session.playersScore.map(player => ({ name: player.name, score: player.score }))
+                        });
+                        console.log("Scores sent for session:", session.playersScore);
+                        session.players = []; // Reset players for the session
+                        session.playersScore = []; // Reset scores for the session
+                    }
                 }
 
                 // Check if all 4 players in the session have disconnected
