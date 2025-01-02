@@ -38,7 +38,7 @@ io.on('connection', (socket) => {
     });
 
     // Listen for "getScore" event (player score submission)
-    socket.on("getScore", (e) => {
+    /*socket.on("getScore", (e) => {
         const session = sessions[e.sessionId];
 
         if (session) {
@@ -55,8 +55,34 @@ io.on('connection', (socket) => {
                 session.playersScore = []; // Reset scores for the session
             }
         }
-    });
+    });*/
+    socket.on("getScore", (e, acknowledgeCallback) => {
+    const session = sessions[e.sessionId];
 
+    if (session) {
+        session.playersScore.push(e);
+
+        // If all 4 players in the session have submitted their scores
+        if (session.playersScore.length === 4) {
+            io.emit("getScore", {
+                sessionId: e.sessionId,
+                scores: session.playersScore.map(player => ({ name: player.name, score: player.score }))
+            }, () => {
+                // This callback runs after all clients have acknowledged receiving the event
+                console.log("Scores sent for session:", session.playersScore);
+                session.players = []; // Reset players for the session
+                session.playersScore = []; // Reset scores for the session
+                console.log("Scores sent and session data cleared for session:", e.sessionId);
+            });
+
+            // Acknowledge the client's request
+            if (acknowledgeCallback) {
+                acknowledgeCallback({ status: "success" });
+            }
+        }
+    }
+});
+    
     // Handle player disconnection
     socket.on('disconnect', () => {
         for (let session of sessions) {
