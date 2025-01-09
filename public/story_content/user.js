@@ -33,7 +33,7 @@ function sendName() {
 
 // Listen for the "find" event from the server
 
-socket.once("find", (e) => {
+socket.on("find", (e) => {
     console.log(e); 
     player.SetVar("connected", e.connected); // Update the player's "connected" variable
     player.SetVar("ID", e.sessionId);
