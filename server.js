@@ -81,8 +81,8 @@ io.on('connection', (socket) => {
                 scores: session.playersScore.map(player => ({ name: player.name, score: player.score }))
             }, () => {
                 // This callback runs after all clients have acknowledged receiving the event
-                console.log("Scores sent for session:", session.playersScore);
-                sessions = sessions = sessions.filter(item => item.sessionId !== e.sessionId);
+                console.log("Scores sent for session:", session[e.sessionId].playersScore);
+                sessions = sessions.filter(item => item.sessionId !== e.sessionId);
                 console.log(sessions);
                 /*
                 session.players = []; // Reset players for the session
