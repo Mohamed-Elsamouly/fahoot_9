@@ -111,7 +111,7 @@ io.on('connection', (socket) => {
                 } else {
                     // Set the player's score to zero if the number of players is 4 or more
                     const disconnectedPlayer = session.players[disconnectedPlayerIndex];
-                    session.playersScore.push({ name: disconnectedPlayer.name, score: 0 });
+                    session.playersScore.push({ sessionId: session.sessionId, name: disconnectedPlayer.name, score: 0 });
                     session.disconnectedPlayersCount++;
                     console.log(`Player disconnected after 4 players were connected. Score set to zero.`);
                 }
