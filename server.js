@@ -15,6 +15,17 @@ const io = socketio(expressServer);
 
 let sessions = []; // Stores all active game sessions
 
+function getRandomSessionId(sessions) { 
+    let randomNumber;
+    const existingSessionIds = sessions.map(session => session.sessionId); // Extract existing sessionIds
+  
+    do {
+      randomNumber = Math.floor(Math.random() * 100) + 1; // Generate a random number between 1 and 5
+    } while (existingSessionIds.includes(randomNumber)); // Repeat until the number is not in existingSessionIds
+  
+    return randomNumber;
+  };
+
 // Socket.IO logic
 io.on('connection', (socket) => {
     // Listen for "find" event (player name submission)
@@ -23,7 +34,8 @@ io.on('connection', (socket) => {
 
         // If no session with available slots exists, create a new one
         if (!session) {
-            session = { players: [], playersScore: [], disconnectedPlayersCount: 0 };
+            const newSessionId = getRandomSessionId(sessions);
+            session = { sessionId: newSessionId, players: [], playersScore: [], disconnectedPlayersCount: 0 };
             sessions.push(session);
         }
 
@@ -32,7 +44,7 @@ io.on('connection', (socket) => {
 
         // If the session has 4 players, start the game
         if (session.players.length === 4) {
-            io.emit("find", { connected: true, sessionId: sessions.indexOf(session) });
+            io.emit("find", { connected: true, sessionId: session.sessionId });
             console.log("Players connected in session:", session.players.map(player => player.name));
         }
     });
@@ -57,7 +69,7 @@ io.on('connection', (socket) => {
         }
     });*/
     socket.on("getScore", (e, acknowledgeCallback) => {
-    const session = sessions[e.sessionId];
+        const session = sessions.find(session => session.sessionId === e.sessionId);
 
     if (session) {
         session.playersScore.push(e);
@@ -70,9 +82,12 @@ io.on('connection', (socket) => {
             }, () => {
                 // This callback runs after all clients have acknowledged receiving the event
                 console.log("Scores sent for session:", session.playersScore);
+                sessions = sessions = sessions.filter(item => item.sessionId !== e.sessionId);
+                console.log(sessions);
+                /*
                 session.players = []; // Reset players for the session
                 session.playersScore = []; // Reset scores for the session
-                console.log("Scores sent and session data cleared for session:", e.sessionId);
+                console.log("Scores sent and session data cleared for session:", e.sessionId);*/
             });
 
             // Acknowledge the client's request
@@ -109,6 +124,6 @@ io.on('connection', (socket) => {
                 }
                 break; // Exit the loop once the player is found and handled
             }
-        }
+        }       
     });
 });
