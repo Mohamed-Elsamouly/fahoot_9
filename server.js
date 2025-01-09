@@ -35,6 +35,7 @@ io.on('connection', (socket) => {
         // If no session with available slots exists, create a new one
         if (!session) {
             const newSessionId = getRandomSessionId(sessions);
+            console.log(newSessionId);
             session = { sessionId: newSessionId, players: [], playersScore: [], disconnectedPlayersCount: 0 };
             sessions.push(session);
         }
