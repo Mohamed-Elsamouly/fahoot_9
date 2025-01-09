@@ -43,19 +43,12 @@ io.on('connection', (socket) => {
         // Add the player to the session
         session.players.push({ name: e.name, socketId: socket.id });
 
-        // Notify the player that they have been added to a session
-        socket.emit("find", { connected: true, sessionId: session.sessionId });
-
-        // If the session has 4 players, start the game and notify all players in the session
+        // If the session has 4 players, start the game
         if (session.players.length === 4) {
-            // Notify all players in the session
-            session.players.forEach(player => {
-                io.to(player.socketId).emit("find", { connected: true, sessionId: session.sessionId });
-            });
+            io.emit("find", { connected: true, sessionId: session.sessionId });
             console.log("Players connected in session:", session.players.map(player => player.name));
         }
     });
-
 
     // Listen for "getScore" event (player score submission)
     /*socket.on("getScore", (e) => {
