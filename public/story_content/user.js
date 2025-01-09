@@ -124,6 +124,7 @@ socket.emit('getScore', { sessionId: sessionId, name: name, score: score });
 
 // Listen for 'getScore' event response from the server
 socket.on("getScore", (data) => {
+console.log(data);
     if (data.sessionId === sessionId) { // Ensure the response is for the correct session
         const scores = data.scores; // Array of player scores
 
