@@ -55,7 +55,7 @@ io.on('connection', (socket) => {
             console.log("Players connected in session:", session.players.map(player => player.name));
         }
     });
-});
+
 
     // Listen for "getScore" event (player score submission)
     /*socket.on("getScore", (e) => {
