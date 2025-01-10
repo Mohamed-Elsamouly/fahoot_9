@@ -45,13 +45,13 @@ io.on('connection', (socket) => {
 
         // If the session has 4 players, start the game
         if (session.players.length === 4) {
-            //io.emit("find", { connected: true, sessionId: session.sessionId });
+            io.emit("find", { connected: true, sessionId: session.sessionId });
             session.players.forEach(player => {
-                io.to(player.socketId).emit("find", { connected: true, sessionId: session.sessionId })});
+                io.to(player.socketId).emit("find", { connected: true, sessionId: session.sessionId });
+            });
             console.log("Players connected in session:", session.players.map(player => player.name));
         }
     });
-});
 
     // Listen for "getScore" event (player score submission)
     /*socket.on("getScore", (e) => {
@@ -131,3 +131,5 @@ io.on('connection', (socket) => {
         }       
     });
 });
+
+
