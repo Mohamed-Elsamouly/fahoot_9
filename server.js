@@ -40,8 +40,14 @@ io.on('connection', (socket) => {
             sessions.push(session);
         }
 
+        const hasName = session.players.some(obj => obj.name === e.name);
+        if (hasName) {
+            console.log("This name has been taken. Please choose another name");
+        } else {
+            session.players.push({ name: e.name, socketId: socket.id });
+        };
         // Add the player to the session
-        session.players.push({ name: e.name, socketId: socket.id });
+        //session.players.push({ name: e.name, socketId: socket.id });
 
         // If the session has 4 players, start the game
         if (session.players.length === 4) {
